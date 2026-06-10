@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -27,6 +21,38 @@ model Post {
   content   String?
   published Boolean  @default(false)
   authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Match {
+  id          String       @id @default(cuid())
+  homeTeam    String
+  awayTeam    String
+  homeScore   Int          @default(0)
+  awayScore   Int          @default(0)
+  status      String       @default("upcoming") // upcoming, live, finished
+  round       String
+  date        String
+  venue       String       @default("")
+  odds        OddsMarket[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model OddsMarket {
+  id        String @id @default(cuid())
+  matchId   String
+  type      String // h2h, over_under_2_5, btts
+  label     String // market display name
+  homeOdds  Float  @default(0)
+  drawOdds  Float  @default(0)
+  awayOdds  Float  @default(0)
+  yesOdds   Float  @default(0)
+  noOdds    Float  @default(0)
+  overOdds  Float  @default(0)
+  underOdds Float  @default(0)
+  match     Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
