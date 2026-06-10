@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Monitor, Radio } from 'lucide-react';
+import { Monitor, Radio, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useBetSlipStore } from '@/store/betSlip';
 import { MatchWithOdds } from '@/types';
 
@@ -32,10 +33,10 @@ export default function LiveStreamPanel({ matches }: LiveStreamPanelProps) {
             <div className="relative rounded-xl overflow-hidden border border-[#00FF88]/20 neon-glow">
               <div className="aspect-video bg-[#0F1115]">
                 <iframe
-                  src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&controls=1&modestbranding=1&rel=0"
+                  src="https://www.youtube.com/embed?listType=user_uploads&list=getv&autoplay=1&mute=0&controls=1&modestbranding=1&rel=0&playsinline=1"
                   className="w-full h-full"
                   allow="autoplay; encrypted-media"
-                  title="Live Stream"
+                  title="GETV Live Stream"
                   style={{ border: 0 }}
                 />
               </div>
@@ -43,6 +44,18 @@ export default function LiveStreamPanel({ matches }: LiveStreamPanelProps) {
                 <Radio className="w-3 h-3 text-[#FF4757] animate-live-dot" />
                 <span className="text-xs font-medium text-white">AO VIVO</span>
               </div>
+            </div>
+            {/* Ver no GETV link */}
+            <div className="mt-3">
+              <a
+                href="https://www.youtube.com/@getv/streams"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm text-[#00FF88] hover:text-[#00FF88]/80 transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Ver no GETV
+              </a>
             </div>
           </div>
 

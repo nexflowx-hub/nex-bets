@@ -1,9 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Plus, Minus, Trash2, Receipt } from 'lucide-react';
+import { X, Plus, Minus, Trash2, Receipt, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBetSlipStore } from '@/store/betSlip';
+import { useUserStore } from '@/store/userStore';
+
+function formatCurrency(value: number): string {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
 
 export default function BetSlip() {
   const {
@@ -19,7 +25,74 @@ export default function BetSlip() {
     potentialReturn,
   } = useBetSlipStore();
 
+  const { user, isAuthenticated, updateUserBalance } = useUserStore();
+  const [isPlacing, setIsPlacing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
   const quickStakes = [5, 10, 25, 50, 100];
+  const stake = totalStake();
+  const balance = user?.balance ?? 0;
+  const canAfford = isAuthenticated && balance >= stake;
+
+  const handlePlaceBet = async () => {
+    if (!isAuthenticated) {
+      setError('Faça login para apostar');
+      return;
+    }
+    if (!canAfford) {
+      setError('Saldo insuficiente');
+      return;
+    }
+
+    setIsPlacing(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const res = await fetch('/api/bets/place', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user!.id,
+          selections: selections.map((s) => ({
+            matchId: s.matchId,
+            marketType: s.marketType,
+            selection: s.selection,
+            odds: s.odds,
+            stake: stakes[s.id] || 10,
+          })),
+          totalOdds: totalOdds(),
+          totalStake: stake,
+          potentialReturn: potentialReturn(),
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Erro ao confirmar aposta' }));
+        throw new Error(data.error || 'Erro ao confirmar aposta');
+      }
+
+      const data = await res.json();
+      setSuccess(true);
+
+      // Update balance
+      if (data.newBalance !== undefined) {
+        updateUserBalance(data.newBalance, data.newBonusBalance);
+      }
+
+      // Clear slip after short delay
+      setTimeout(() => {
+        clearSlip();
+        toggleSlip();
+        setSuccess(false);
+      }, 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao confirmar aposta');
+    } finally {
+      setIsPlacing(false);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -128,7 +201,7 @@ export default function BetSlip() {
                         </Button>
                         <div className="flex-1 bg-[#0F1115] rounded px-3 py-1 text-center">
                           <span className="text-sm text-[#E8E8E8] font-mono">
-                            ${(stakes[sel.id] || 10).toFixed(2)}
+                            R$ {(stakes[sel.id] || 10).toFixed(2)}
                           </span>
                         </div>
                         <Button
@@ -153,7 +226,7 @@ export default function BetSlip() {
                                 : 'bg-white/5 text-[#8B949E] hover:bg-white/10'
                             }`}
                           >
-                            ${qs}
+                            R$ {qs}
                           </button>
                         ))}
                       </div>
@@ -165,6 +238,51 @@ export default function BetSlip() {
               {/* Footer */}
               {selections.length > 0 && (
                 <div className="border-t border-white/[0.08] p-4 space-y-3">
+                  {/* Error/Success messages */}
+                  <AnimatePresence>
+                    {error && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="flex items-center gap-2 text-[#FF4757] text-xs bg-[#FF4757]/10 rounded-lg p-2"
+                      >
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        {error}
+                      </motion.div>
+                    )}
+                    {success && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="flex items-center gap-2 text-[#00FF88] text-xs bg-[#00FF88]/10 rounded-lg p-2"
+                      >
+                        Aposta confirmada com sucesso!
+                      </motion.div>
+                    )}
+                    {!isAuthenticated && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center gap-2 text-[#FFD700] text-xs bg-[#FFD700]/10 rounded-lg p-2"
+                      >
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        Faça login para confirmar apostas
+                      </motion.div>
+                    )}
+                    {isAuthenticated && !canAfford && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center gap-2 text-[#FF4757] text-xs bg-[#FF4757]/10 rounded-lg p-2"
+                      >
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        Saldo insuficiente — Carregue sua carteira
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   <div className="grid grid-cols-3 gap-3 text-center">
                     <div>
                       <p className="text-xs text-[#8B949E]">Odds Total</p>
@@ -175,18 +293,28 @@ export default function BetSlip() {
                     <div>
                       <p className="text-xs text-[#8B949E]">Aposta Total</p>
                       <p className="text-lg font-bold text-[#E8E8E8] font-mono">
-                        ${totalStake().toFixed(2)}
+                        {formatCurrency(stake)}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-[#8B949E]">Retorno</p>
                       <p className="text-lg font-bold text-[#00FF88] font-mono">
-                        ${potentialReturn().toFixed(2)}
+                        {formatCurrency(potentialReturn())}
                       </p>
                     </div>
                   </div>
-                  <Button className="w-full bg-[#00FF88] text-[#0F1115] font-bold hover:bg-[#00FF88]/90 neon-glow py-6 text-base">
-                    Confirmar Apostas
+                  <Button
+                    onClick={handlePlaceBet}
+                    disabled={isPlacing || (!isAuthenticated && false)}
+                    className="w-full bg-[#00FF88] text-[#0F1115] font-bold hover:bg-[#00FF88]/90 neon-glow py-6 text-base disabled:opacity-50"
+                  >
+                    {isPlacing ? (
+                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                    ) : success ? (
+                      '✓ Confirmado!'
+                    ) : (
+                      'Confirmar Apostas'
+                    )}
                   </Button>
                 </div>
               )}

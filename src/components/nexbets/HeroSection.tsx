@@ -2,18 +2,18 @@
 
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, BarChart3, Zap } from 'lucide-react';
+import { TrendingUp, BarChart3, Zap, MessageCircle } from 'lucide-react';
 
 export default function HeroSection() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* YouTube Background */}
+      {/* YouTube Background - GETV Channel */}
       <div className="absolute inset-0 pointer-events-none">
         <iframe
-          src="https://www.youtube.com/embed/x4g90XIhoVw?autoplay=1&mute=1&loop=1&playlist=x4g90XIhoVw&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&vq=hd1080"
+          src="https://www.youtube.com/embed?listType=user_uploads&list=getv&autoplay=1&mute=1&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&vq=hd1080"
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180%] h-[180%] min-w-[180vw] min-h-[180vh]"
           allow="autoplay; encrypted-media"
-          title="Background Video"
+          title="GETV Background"
           style={{ border: 0 }}
         />
       </div>
@@ -72,6 +72,13 @@ export default function HeroSection() {
             <BarChart3 className="w-5 h-5 mr-2" />
             Ver Mercados
           </Button>
+          <Button
+            size="lg"
+            className="bg-[#25D366] text-white font-bold hover:bg-[#25D366]/90 text-base px-8"
+          >
+            <MessageCircle className="w-5 h-5 mr-2" />
+            Registar via WhatsApp
+          </Button>
         </motion.div>
 
         {/* Stats */}
@@ -82,8 +89,8 @@ export default function HeroSection() {
           className="flex flex-wrap justify-center gap-8 sm:gap-16"
         >
           {[
-            { icon: Zap, value: '14+', label: 'Jogos' },
-            { icon: BarChart3, value: '42+', label: 'Mercados' },
+            { icon: Zap, value: '72+', label: 'Jogos' },
+            { icon: BarChart3, value: '72+', label: 'Mercados' },
             { icon: TrendingUp, value: '0.0s', label: 'Latência' },
           ].map((stat) => (
             <div key={stat.label} className="text-center">

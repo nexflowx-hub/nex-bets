@@ -10,6 +10,10 @@ const LiveStreamPanel = dynamic(() => import('@/components/nexbets/LiveStreamPan
 const MarketsGrid = dynamic(() => import('@/components/nexbets/MarketsGrid'), { ssr: false });
 const BetSlip = dynamic(() => import('@/components/nexbets/BetSlip'), { ssr: false });
 const Footer = dynamic(() => import('@/components/nexbets/Footer'), { ssr: false });
+const AuthDialog = dynamic(() => import('@/components/nexbets/AuthDialog'), { ssr: false });
+const WalletPanel = dynamic(() => import('@/components/nexbets/WalletPanel'), { ssr: false });
+const PromotionBanner = dynamic(() => import('@/components/nexbets/PromotionBanner'), { ssr: false });
+const WinnerBetSection = dynamic(() => import('@/components/nexbets/WinnerBetSection'), { ssr: false });
 
 export default function Home() {
   const [matches, setMatches] = useState<MatchWithOdds[]>([]);
@@ -17,6 +21,10 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Overlay states
+  const [authOpen, setAuthOpen] = useState(false);
+  const [walletOpen, setWalletOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -46,6 +54,13 @@ export default function Home() {
     };
   }, [fetchData, mounted]);
 
+  const scrollToWinner = () => {
+    const el = document.getElementById('winner-bet');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   if (!mounted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0F1115]">
@@ -56,9 +71,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0F1115]">
-      <Navbar />
+      <Navbar onOpenAuth={() => setAuthOpen(true)} onOpenWallet={() => setWalletOpen(true)} />
       <main className="flex-1">
         <HeroSection />
+        <PromotionBanner
+          onOpenWallet={() => setWalletOpen(true)}
+          onScrollToWinner={scrollToWinner}
+        />
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="flex flex-col items-center gap-3">
@@ -78,9 +97,21 @@ export default function Home() {
             <MarketsGrid matches={matches} />
           </>
         )}
+        <WinnerBetSection />
       </main>
       <Footer />
+
+      {/* Overlays */}
       <BetSlip />
+      <WalletPanel
+        isOpen={walletOpen}
+        onClose={() => setWalletOpen(false)}
+        onOpenAuth={() => {
+          setWalletOpen(false);
+          setAuthOpen(true);
+        }}
+      />
+      <AuthDialog open={authOpen} onOpenChange={setAuthOpen} />
     </div>
   );
 }

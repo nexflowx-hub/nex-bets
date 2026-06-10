@@ -1,23 +1,38 @@
 'use client';
 
 import { useState } from 'react';
-import { Zap, LayoutGrid, Receipt, Menu, X } from 'lucide-react';
+import { Zap, LayoutGrid, Receipt, Menu, X, Wallet, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { useBetSlipStore } from '@/store/betSlip';
+import { useUserStore } from '@/store/userStore';
 import { motion } from 'framer-motion';
 
-export default function Navbar() {
+interface NavbarProps {
+  onOpenAuth: () => void;
+  onOpenWallet: () => void;
+}
+
+function formatCurrency(value: number): string {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+export default function Navbar({ onOpenAuth, onOpenWallet }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const selections = useBetSlipStore((s) => s.selections);
   const toggleSlip = useBetSlipStore((s) => s.toggleSlip);
+  const { user, isAuthenticated } = useUserStore();
 
   const navLinks = [
     { href: '#live', label: 'Ao Vivo', icon: Zap },
     { href: '#markets', label: 'Mercados', icon: LayoutGrid },
     { href: '#bets', label: 'Apostas', icon: Receipt },
   ];
+
+  const maskedPhone = user?.whatsapp
+    ? `****${user.whatsapp.slice(-4)}`
+    : '';
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass-panel">
@@ -42,7 +57,41 @@ export default function Navbar() {
           ))}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* User greeting or login button */}
+          {isAuthenticated ? (
+            <span className="hidden sm:flex items-center gap-1 text-xs text-[#8B949E]">
+              Olá, <span className="text-[#E8E8E8] font-medium">{user?.name || maskedPhone}</span>
+            </span>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onOpenAuth}
+              className="text-[#8B949E] hover:text-[#00FF88]"
+            >
+              <LogIn className="w-4 h-4 sm:mr-1" />
+              <span className="hidden sm:inline">Entrar</span>
+            </Button>
+          )}
+
+          {/* Wallet */}
+          <Button
+            onClick={onOpenWallet}
+            variant="outline"
+            size="sm"
+            className="relative border-[#00FF88]/30 text-[#00FF88] hover:bg-[#00FF88]/10 hover:text-[#00FF88]"
+          >
+            <Wallet className="w-4 h-4" />
+            <span className="hidden sm:inline ml-2">Carteira</span>
+            {isAuthenticated && (
+              <span className="hidden sm:inline ml-2 text-xs font-mono font-bold">
+                {formatCurrency(user?.balance ?? 0)}
+              </span>
+            )}
+          </Button>
+
+          {/* Bet Slip */}
           <Button
             onClick={toggleSlip}
             variant="outline"
@@ -72,6 +121,35 @@ export default function Navbar() {
             <SheetContent side="right" className="bg-[#161B22] border-white/[0.08]">
               <SheetTitle className="sr-only">Menu</SheetTitle>
               <div className="flex flex-col gap-4 mt-8">
+                {/* User info in mobile menu */}
+                {isAuthenticated ? (
+                  <div className="flex items-center gap-2 p-3 bg-[#1A1F27] rounded-lg border border-white/[0.05]">
+                    <div className="w-8 h-8 rounded-full bg-[#00FF88]/20 flex items-center justify-center">
+                      <span className="text-[#00FF88] text-xs font-bold">
+                        {(user?.name || maskedPhone).charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-[#E8E8E8]">{user?.name || maskedPhone}</p>
+                      <p className="text-xs text-[#8B949E]">{formatCurrency(user?.balance ?? 0)}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsOpen(false);
+                      onOpenAuth();
+                    }}
+                    className="border-[#00FF88]/30 text-[#00FF88] hover:bg-[#00FF88]/10"
+                  >
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Entrar
+                  </Button>
+                )}
+
+                <div className="h-px bg-white/[0.08]" />
+
                 {navLinks.map((link) => (
                   <a
                     key={link.href}
@@ -83,6 +161,17 @@ export default function Navbar() {
                     {link.label}
                   </a>
                 ))}
+
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    onOpenWallet();
+                  }}
+                  className="text-lg text-[#E8E8E8] hover:text-[#00FF88] transition-colors flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 w-full text-left"
+                >
+                  <Wallet className="w-5 h-5" />
+                  Carteira
+                </button>
               </div>
             </SheetContent>
           </Sheet>
