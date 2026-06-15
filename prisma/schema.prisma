@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Bet {
+  id             String   @id @default(cuid())
+  playerName     String
+  whatsapp       String
+  email          String?
+  cpf            String?
+  championTeam   String
+  championStake  Float
+  championOdd    Float
+  championBonus  Int      @default(5)
+  matchSelections String   // JSON string of { matchId: selection }
+  matchesStake   Float    @default(0)
+  matchesTotalOdd Float   @default(0)
+  matchesBonus   Int      @default(1)
+  totalInvestment Float
+  totalPotential  Float
+  status         String   @default("pending") // pending, paid, won, lost
+  pixCode        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
